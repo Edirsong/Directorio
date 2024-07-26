@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directorio de Docentes</title>
+    <!-- Enlaces a Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Directorio de Docentes Universitarios</h1>
+        <form id="docente-form">
+            <div class="form-group">
+                <input type="text" id="nombre" class="form-control" placeholder="Nombre">
+            </div>
+            <div class="form-group">
+                <input type="text" id="apellidos" class="form-control" placeholder="Apellidos">
+            </div>
+            <div class="form-group">
+                <input type="date" id="fecha-nacimiento" class="form-control">
+            </div>
+            <div class="form-group">
+                <select id="grado-instruccion" class="form-control">
+                    <option value="Bachiller">Bachiller</option>
+                    <option value="Licenciatura">Licenciatura</option>
+                    <option value="Maestria">Maestría</option>
+                    <option value="Doctorado">Doctorado</option>
+                    <option value="Segunda especialidad">Segunda especialidad</option>
+                    <option value="Otros">Otros</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="foto">Foto:</label>
+                <input type="file" id="foto" class="form-control-file">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="agregarDocente()">Agregar Docente</button>
+        </form>
+        <div id="resumen-docentes" class="mt-4">
+            <!-- Aquí se mostrará el resumen de los docentes -->
+        </div>
+        <div id="detalle-docente" class="mt-4">
+            <!-- Aquí se mostrará la información completa de un docente al hacer clic -->
+        </div>
+    </div>
+
+    <script>
+        const docentes = [];
+        let fotoURL = '';
+
+        document.getElementById('foto').addEventListener('change', function(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                fotoURL = reader.result;
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        });
+
+        function agregarDocente() {
+            const nombre = document.getElementById('nombre').value;
+            const apellidos = document.getElementById('apellidos').value;
+            const fechaNacimiento = document.getElementById('fecha-nacimiento').value;
+            const gradoInstruccion = document.getElementById('grado-instruccion').value;
+
+            const nuevoDocente = {
+                nombre: nombre,
+                apellidos: apellidos,
+                fechaNacimiento: fechaNacimiento,
+                gradoInstruccion: gradoInstruccion,
+                foto: fotoURL
+            };
+
+            docentes.push(nuevoDocente);
+            actualizarResumen();
+
+            // Limpia los campos después de agregar un docente
+            document.getElementById('nombre').value = '';
+            document.getElementById('apellidos').value = '';
+            document.getElementById('fecha-nacimiento').value = '';
+            document.getElementById('grado-instruccion').value = 'Bachiller';
+            document.getElementById('foto').value = '';
+            fotoURL = '';
+        }
+
+        function actualizarResumen() {
+            const resumenDiv = document.getElementById('resumen-docentes');
+            resumenDiv.innerHTML = '';
+
+            docentes.forEach((docente, index) => {
+                const docenteResumen = document.createElement('p');
+                docenteResumen.textContent = `${index + 1}. ${docente.nombre} ${docente.apellidos}`;
+                docenteResumen.style.cursor = 'pointer';
+                docenteResumen.addEventListener('click', () => mostrarDetalle(index));
+                resumenDiv.appendChild(docenteResumen);
+            });
+        }
+
+        function mostrarDetalle(index) {
+            const detalleDiv = document.getElementById('detalle-docente');
+            detalleDiv.innerHTML = ''; // Limpiar contenido previo
+
+            const docente = docentes[index];
+
+            const detalleNombre = document.createElement('p');
+            detalleNombre.textContent = `Nombre completo: ${docente.nombre} ${docente.apellidos}`;
+            detalleDiv.appendChild(detalleNombre);
+
+            const detalleFechaNacimiento = document.createElement('p');
+            detalleFechaNacimiento.textContent = `Fecha de Nacimiento: ${docente.fechaNacimiento}`;
+            detalleDiv.appendChild(detalleFechaNacimiento);
+
+            const detalleGradoInstruccion = document.createElement('p');
+            detalleGradoInstruccion.textContent = `Grado de Instrucción: ${docente.gradoInstruccion}`;
+            detalleDiv.appendChild(detalleGradoInstruccion);
+
+            if (docente.foto) {
+                const foto = document.createElement('img');
+                foto.src = docente.foto;
+                foto.alt = `${docente.nombre} ${docente.apellidos}`;
+                foto.style.maxWidth = '150px';
+                detalleDiv.appendChild(foto);
+            }
+
+            const botonModificar = document.createElement('button');
+            botonModificar.textContent = 'Modificar';
+            botonModificar.className = 'btn btn-warning mr-2';
+            botonModificar.addEventListener('click', () => modificarDocente(index));
+            detalleDiv.appendChild(botonModificar);
+
+            const botonEliminar = document.createElement('button');
+            botonEliminar.textContent = 'Eliminar';
+            botonEliminar.className = 'btn btn-danger';
+            botonEliminar.addEventListener('click', () => eliminarDocente(index));
+            detalleDiv.appendChild(botonEliminar);
+        }
+
+        function modificarDocente(index) {
+            const docente = docentes[index];
+
+            document.getElementById('nombre').value = docente.nombre;
+            document.getElementById('apellidos').value = docente.apellidos;
+            document.getElementById('fecha-nacimiento').value = docente.fechaNacimiento;
+            document.getElementById('grado-instruccion').value = docente.gradoInstruccion;
+
+            // Actualizar foto
+            document.getElementById('foto').value = '';
+            fotoURL = docente.foto;
+
+            // Cambiar el botón de agregar a actualizar
+            const botonAgregar = document.querySelector('button[onclick="agregarDocente()"]');
+            botonAgregar.textContent = 'Guardar Cambios';
+            botonAgregar.onclick = () => guardarCambios(index);
+        }
+
+        function guardarCambios(index) {
+            const nombre = document.getElementById('nombre').value;
+            const apellidos = document.getElementById('apellidos').value;
+            const fechaNacimiento = document.getElementById('fecha-nacimiento').value;
+            const gradoInstruccion = document.getElementById('grado-instruccion').value;
+
+            const docenteModificado = {
+                nombre: nombre,
+                apellidos: apellidos,
+                fechaNacimiento: fechaNacimiento,
+                gradoInstruccion: gradoInstruccion,
+                foto: fotoURL
+            };
+
+            docentes[index] = docenteModificado;
+            actualizarResumen();
+            mostrarDetalle(index);
+
+            // Restaurar el botón de agregar
+            const botonGuardar = document.querySelector('button[onclick="guardarCambios()"]');
+            botonGuardar.textContent = 'Agregar Docente';
+            botonGuardar.onclick = agregarDocente;
+
+            // Limpiar el formulario
+            document.getElementById('nombre').value = '';
+            document.getElementById('apellidos').value = '';
+            document.getElementById('fecha-nacimiento').value = '';
+            document.getElementById('grado-instruccion').value = 'Bachiller';
+            document.getElementById('foto').value = '';
+            fotoURL = '';
+        }
+
+        function eliminarDocente(index) {
+            docentes.splice(index, 1);
+            actualizarResumen();
+            document.getElementById('detalle-docente').innerHTML = '';
+        }
+
+        // Llama a la función de actualización inicial
+        actualizarResumen();
+    </script>
+</body>
+</html>
