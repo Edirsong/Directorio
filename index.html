@@ -48,7 +48,9 @@
     </div>
 
     <script>
-        const docentes = [];
+        const baseUrl = 'https://script.google.com/macros/s/AKfycbxsZnhX93LabcgFMvZHkQ74j3iEGot3_3v6cGtaUf1BJ8RxIdf5GtfzAEJUma1gVjLc/exec'; // Reemplaza con la URL de tu despliegue
+
+        let docentes = [];
         let fotoURL = '';
 
         document.getElementById('foto').addEventListener('change', function(event) {
@@ -59,7 +61,7 @@
             reader.readAsDataURL(event.target.files[0]);
         });
 
-        function agregarDocente() {
+        async function agregarDocente() {
             const nombre = document.getElementById('nombre').value;
             const apellidos = document.getElementById('apellidos').value;
             const fechaNacimiento = document.getElementById('fecha-nacimiento').value;
@@ -73,16 +75,21 @@
                 foto: fotoURL
             };
 
-            docentes.push(nuevoDocente);
-            actualizarResumen();
+            await fetch(baseUrl + '?action=agregarContacto', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(nuevoDocente)
+            });
 
-            // Limpia los campos después de agregar un docente
-            document.getElementById('nombre').value = '';
-            document.getElementById('apellidos').value = '';
-            document.getElementById('fecha-nacimiento').value = '';
-            document.getElementById('grado-instruccion').value = 'Bachiller';
-            document.getElementById('foto').value = '';
-            fotoURL = '';
+            cargarDocentesDeGoogleSheets();
+        }
+
+        async function cargarDocentesDeGoogleSheets() {
+            const response = await fetch(baseUrl + '?action=obtenerContactos');
+            docentes = await response.json();
+            actualizarResumen();
         }
 
         function actualizarResumen() {
@@ -104,97 +111,106 @@
 
             const docente = docentes[index];
 
-            const detalleNombre = document.createElement('p');
-            detalleNombre.textContent = `Nombre completo: ${docente.nombre} ${docente.apellidos}`;
-            detalleDiv.appendChild(detalleNombre);
+                    const detalleNombre = document.createElement('p');
+        detalleNombre.textContent = `Nombre completo: ${docente.nombre} ${docente.apellidos}`;
+        detalleDiv.appendChild(detalleNombre);
 
-            const detalleFechaNacimiento = document.createElement('p');
-            detalleFechaNacimiento.textContent = `Fecha de Nacimiento: ${docente.fechaNacimiento}`;
-            detalleDiv.appendChild(detalleFechaNacimiento);
+        const detalleFechaNacimiento = document.createElement('p');
+        detalleFechaNacimiento.textContent = `Fecha de Nacimiento: ${docente.fechaNacimiento}`;
+        detalleDiv.appendChild(detalleFechaNacimiento);
 
-            const detalleGradoInstruccion = document.createElement('p');
-            detalleGradoInstruccion.textContent = `Grado de Instrucción: ${docente.gradoInstruccion}`;
-            detalleDiv.appendChild(detalleGradoInstruccion);
+        const detalleGradoInstruccion = document.createElement('p');
+        detalleGradoInstruccion.textContent = `Grado de Instrucción: ${docente.gradoInstruccion}`;
+        detalleDiv.appendChild(detalleGradoInstruccion);
 
-            if (docente.foto) {
-                const foto = document.createElement('img');
-                foto.src = docente.foto;
-                foto.alt = `${docente.nombre} ${docente.apellidos}`;
-                foto.style.maxWidth = '150px';
-                detalleDiv.appendChild(foto);
-            }
-
-            const botonModificar = document.createElement('button');
-            botonModificar.textContent = 'Modificar';
-            botonModificar.className = 'btn btn-warning mr-2';
-            botonModificar.addEventListener('click', () => modificarDocente(index));
-            detalleDiv.appendChild(botonModificar);
-
-            const botonEliminar = document.createElement('button');
-            botonEliminar.textContent = 'Eliminar';
-            botonEliminar.className = 'btn btn-danger';
-            botonEliminar.addEventListener('click', () => eliminarDocente(index));
-            detalleDiv.appendChild(botonEliminar);
+        if (docente.foto) {
+            const foto = document.createElement('img');
+            foto.src = docente.foto;
+            foto.alt = `${docente.nombre} ${docente.apellidos}`;
+            foto.style.maxWidth = '150px';
+            detalleDiv.appendChild(foto);
         }
 
-        function modificarDocente(index) {
-            const docente = docentes[index];
+        const botonModificar = document.createElement('button');
+        botonModificar.textContent = 'Modificar';
+        botonModificar.className = 'btn btn-warning mr-2';
+        botonModificar.addEventListener('click', () => modificarDocente(index));
+        detalleDiv.appendChild(botonModificar);
 
-            document.getElementById('nombre').value = docente.nombre;
-            document.getElementById('apellidos').value = docente.apellidos;
-            document.getElementById('fecha-nacimiento').value = docente.fechaNacimiento;
-            document.getElementById('grado-instruccion').value = docente.gradoInstruccion;
+        const botonEliminar = document.createElement('button');
+        botonEliminar.textContent = 'Eliminar';
+        botonEliminar.className = 'btn btn-danger';
+        botonEliminar.addEventListener('click', () => eliminarDocente(index));
+        detalleDiv.appendChild(botonEliminar);
+    }
 
-            // Actualizar foto
-            document.getElementById('foto').value = '';
-            fotoURL = docente.foto;
+    async function modificarDocente(index) {
+        const docente = docentes[index];
 
-            // Cambiar el botón de agregar a actualizar
-            const botonAgregar = document.querySelector('button[onclick="agregarDocente()"]');
-            botonAgregar.textContent = 'Guardar Cambios';
-            botonAgregar.onclick = () => guardarCambios(index);
-        }
+        document.getElementById('nombre').value = docente.nombre;
+        document.getElementById('apellidos').value = docente.apellidos;
+        document.getElementById('fecha-nacimiento').value = docente.fechaNacimiento;
+        document.getElementById('grado-instruccion').value = docente.gradoInstruccion;
 
-        function guardarCambios(index) {
-            const nombre = document.getElementById('nombre').value;
-            const apellidos = document.getElementById('apellidos').value;
-            const fechaNacimiento = document.getElementById('fecha-nacimiento').value;
-            const gradoInstruccion = document.getElementById('grado-instruccion').value;
+        // Actualizar foto
+        document.getElementById('foto').value = '';
+        fotoURL = docente.foto;
 
-            const docenteModificado = {
-                nombre: nombre,
-                apellidos: apellidos,
-                fechaNacimiento: fechaNacimiento,
-                gradoInstruccion: gradoInstruccion,
-                foto: fotoURL
-            };
+        // Cambiar el botón de agregar a actualizar
+        const botonAgregar = document.querySelector('button[onclick="agregarDocente()"]');
+        botonAgregar.textContent = 'Guardar Cambios';
+        botonAgregar.onclick = () => guardarCambios(index);
+    }
 
-            docentes[index] = docenteModificado;
-            actualizarResumen();
-            mostrarDetalle(index);
+    async function guardarCambios(index) {
+        const nombre = document.getElementById('nombre').value;
+        const apellidos = document.getElementById('apellidos').value;
+        const fechaNacimiento = document.getElementById('fecha-nacimiento').value;
+        const gradoInstruccion = document.getElementById('grado-instruccion').value;
 
-            // Restaurar el botón de agregar
-            const botonGuardar = document.querySelector('button[onclick="guardarCambios()"]');
-            botonGuardar.textContent = 'Agregar Docente';
-            botonGuardar.onclick = agregarDocente;
+        const docenteModificado = {
+            nombre: nombre,
+            apellidos: apellidos,
+            fechaNacimiento: fechaNacimiento,
+            gradoInstruccion: gradoInstruccion,
+            foto: fotoURL
+        };
 
-            // Limpiar el formulario
-            document.getElementById('nombre').value = '';
-            document.getElementById('apellidos').value = '';
-            document.getElementById('fecha-nacimiento').value = '';
-            document.getElementById('grado-instruccion').value = 'Bachiller';
-            document.getElementById('foto').value = '';
-            fotoURL = '';
-        }
+        await fetch(baseUrl + '?action=modificarContacto&index=' + index, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(docenteModificado)
+        });
 
-        function eliminarDocente(index) {
-            docentes.splice(index, 1);
-            actualizarResumen();
-            document.getElementById('detalle-docente').innerHTML = '';
-        }
+        cargarDocentesDeGoogleSheets();
 
-        // Llama a la función de actualización inicial
-        actualizarResumen();
-    </script>
+        // Restaurar el botón de agregar
+        const botonGuardar = document.querySelector('button[onclick="guardarCambios()"]');
+        botonGuardar.textContent = 'Agregar Docente';
+        botonGuardar.onclick = agregarDocente;
+
+        // Limpiar el formulario
+        document.getElementById('nombre').value = '';
+        document.getElementById('apellidos').value = '';
+        document.getElementById('fecha-nacimiento').value = '';
+        document.getElementById('grado-instruccion').value = 'Bachiller';
+        document.getElementById('foto').value = '';
+        fotoURL = '';
+    }
+
+    async function eliminarDocente(index) {
+        await fetch(baseUrl + '?action=eliminarContacto&index=' + index, {
+            method: 'POST'
+        });
+
+        cargarDocentesDeGoogleSheets();
+    }
+
+    // Cargar los docentes de Google Sheets al iniciar
+    cargarDocentesDeGoogleSheets();
+</script>
 </body>
 </html>
+
